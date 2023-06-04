@@ -189,6 +189,8 @@ class GroupedListView<T, E> extends StatefulWidget {
   /// the scroll position changes drastically.
   final double? itemExtent;
 
+  final GlobalKey? animatedListKey;
+
   /// Creates a [GroupedListView].
   /// This constructor requires that [elements] and [groupBy] are provieded.
   /// [elements] defines a list of elements which are displayed in the list and
@@ -199,6 +201,7 @@ class GroupedListView<T, E> extends StatefulWidget {
   /// of [groupSeparatorBuilder] or [groupHeaderBuilder] must be provieded.
   const GroupedListView({
     Key? key,
+    this.animatedListKey,
     required this.elements,
     required this.groupBy,
     this.groupComparator,
@@ -296,7 +299,7 @@ class _GroupedListViewState<T, E> extends State<GroupedListView<T, E>> {
     ///
     /// If the [index] points to an separator and the previous and next items
     /// are in different groups, a group header widget is displayed.
-    Widget itemBuilder(context, index) {
+    Widget itemBuilder(context, index, animation) {
       var actualIndex = index ~/ 2;
       if (index == hiddenIndex) {
         return Opacity(
@@ -313,34 +316,62 @@ class _GroupedListViewState<T, E> extends State<GroupedListView<T, E>> {
         }
         return widget.separator;
       }
-      return _buildItem(context, actualIndex);
+      return SlideTransition(
+          position: animation
+              .drive(Tween(begin: Offset(0.0, 1.0), end: Offset(0.0, 0.0))),
+          child: _buildItem(context, actualIndex));
     }
+    // Widget list = ListView.builder(
+    //   scrollDirection: widget.scrollDirection,
+    //   controller: _controller,
+    //   primary: widget.primary,
+    //   physics: widget.physics,
+    //   shrinkWrap: widget.shrinkWrap,
+    //   padding: widget.padding,
+    //   reverse: widget.reverse,
+    //   clipBehavior: widget.clipBehavior,
+    //   dragStartBehavior: widget.dragStartBehavior,
+    //   itemExtent: widget.itemExtent,
+    //   restorationId: widget.restorationId,
+    //   keyboardDismissBehavior: widget.keyboardDismissBehavior,
+    //   semanticChildCount: widget.semanticChildCount,
+    //   itemCount: _sortedElements.length * 2,
+    //   addAutomaticKeepAlives: widget.addAutomaticKeepAlives,
+    //   addRepaintBoundaries: widget.addRepaintBoundaries,
+    //   addSemanticIndexes: widget.addSemanticIndexes,
+    //   cacheExtent: widget.cacheExtent,
+    //   itemBuilder: itemBuilder,
+    // );
+
+    final list = AnimatedList(
+      key: widget.animatedListKey,
+      scrollDirection: widget.scrollDirection,
+      controller: _controller,
+      primary: widget.primary,
+      physics: widget.physics,
+      shrinkWrap: widget.shrinkWrap,
+      padding: widget.padding,
+      reverse: widget.reverse,
+      clipBehavior: widget.clipBehavior,
+      initialItemCount: _sortedElements.length * 2,
+      // dragStartBehavior: widget.dragStartBehavior,
+      // itemExtent: widget.itemExtent,
+      // restorationId: widget.restorationId,
+      // keyboardDismissBehavior: widget.keyboardDismissBehavior,
+      // semanticChildCount: widget.semanticChildCount,
+      // itemCount: _sortedElements.length * 2,
+      // addAutomaticKeepAlives: widget.addAutomaticKeepAlives,
+      // addRepaintBoundaries: widget.addRepaintBoundaries,
+      // addSemanticIndexes: widget.addSemanticIndexes,
+      // cacheExtent: widget.cacheExtent,
+      itemBuilder: itemBuilder,
+    );
 
     return Stack(
       key: _key,
       alignment: Alignment.topCenter,
       children: <Widget>[
-        ListView.builder(
-          scrollDirection: widget.scrollDirection,
-          controller: _controller,
-          primary: widget.primary,
-          physics: widget.physics,
-          shrinkWrap: widget.shrinkWrap,
-          padding: widget.padding,
-          reverse: widget.reverse,
-          clipBehavior: widget.clipBehavior,
-          dragStartBehavior: widget.dragStartBehavior,
-          itemExtent: widget.itemExtent,
-          restorationId: widget.restorationId,
-          keyboardDismissBehavior: widget.keyboardDismissBehavior,
-          semanticChildCount: widget.semanticChildCount,
-          itemCount: _sortedElements.length * 2,
-          addAutomaticKeepAlives: widget.addAutomaticKeepAlives,
-          addRepaintBoundaries: widget.addRepaintBoundaries,
-          addSemanticIndexes: widget.addSemanticIndexes,
-          cacheExtent: widget.cacheExtent,
-          itemBuilder: itemBuilder,
-        ),
+        list,
         StreamBuilder<int>(
             stream: _streamController.stream,
             initialData: _topElementIndex,
